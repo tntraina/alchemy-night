@@ -1,0 +1,25 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Polls</title>
+</head>
+<body>
+    <h1>All Polls</h1>
+    {% if polls %}
+        <ul>
+            {% for poll in polls %}
+                <li>
+                    <a href="{{ url_for('poll_view', poll_id=poll.id) }}">{{ poll.question }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No polls have been created yet.</p>
+    {% endif %}
+    <br>
+    <a href="/create_poll">Create a new poll</a><br>
+    <a href="/">Back to Home</a>
+</body>
+</html>

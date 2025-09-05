@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ poll.question }}</title>
+</head>
+<body>
+    <h1>{{ poll.question }}</h1>
+
+    {% if user_has_voted %}
+        <p>You have already voted in this poll.</p>
+        <h2>Results</h2>
+        <ul>
+            {% for choice in poll.choices %}
+                <li>{{ choice.text }}: {{ choice.votes | length }} votes</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <form action="{{ url_for('vote', poll_id=poll.id) }}" method="post">
+            {% for choice in poll.choices %}
+                <input type="radio" name="choice" value="{{ choice.id }}" id="choice{{ choice.id }}">
+                <label for="choice{{ choice.id }}">{{ choice.text }}</label><br>
+            {% endfor %}
+            <br>
+            <button type="submit">Vote</button>
+        </form>
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('polls') }}">Back to Polls</a>
+</body>
+</html>

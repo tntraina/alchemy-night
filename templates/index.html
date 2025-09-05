@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flask Polls App</title>
+  </head>
+  <body>
+    <header>
+      {% if session['user'] %}
+        <p>Logged in as: {{ session['user']['email'] }}</p>
+        <a href="/logout">Logout</a>
+      {% else %}
+        <a href="/login">Login with Google</a>
+      {% endif %}
+    </header>
+    <main>
+      <h1>Welcome to the Polling App!</h1>
+      {% if session['user'] %}
+        <a href="/polls">View Polls</a><br>
+        <a href="/create_poll">Make a New Poll</a><br>
+      {% else %}
+      <p>Please log in to create and vote on polls.</p>
+      {% endif %}
+    </main>
+  </body>
+</html>

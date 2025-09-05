@@ -1,0 +1,6 @@
+<<<<<<< HEAD
+.venv
+=======
+.venv
+instance/project.db
+>>>>>>> 822b8b5 (Initial commit to overwrite FirebaseStudio repo)

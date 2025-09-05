@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Poll</title>
+</head>
+<body>
+    <h1>Create a New Poll</h1>
+    <form method="POST" action="/create_poll">
+        <label for="question">Poll Question:</label><br>
+        <input type="text" id="question" name="question" required><br><br>
+
+        <h2>Choices</h2>
+        <div id="choices">
+            <input type="text" name="choice" placeholder="Choice 1" required><br>
+        </div>
+        <button type="button" onclick="addChoice()">Add another choice</button><br><br>
+
+        <h2>Or add from our library</h2>
+        <div id="library_options">
+            {% for option in library_options %}
+                <input type="checkbox" name="library_choice" value="{{ option.text }}"> {{ option.text }}<br>
+            {% endfor %}
+        </div>
+
+        <input type="submit" value="Create Poll">
+    </form>
+
+    <hr>
+
+    <h2>Add to the Library</h2>
+    <form method="POST" action="/add_library_option">
+        <input type="text" name="option_text" required>
+        <input type="submit" value="Add Option">
+    </form>
+
+    <script>
+        let choiceCount = 1;
+        function addChoice() {
+            choiceCount++;
+            const newChoice = document.createElement('div');
+            newChoice.innerHTML = `<input type="text" name="choice" placeholder="Choice ${choiceCount}" required><br>`;
+            document.getElementById('choices').appendChild(newChoice);
+        }
+    </script>
+</body>
+</html>
