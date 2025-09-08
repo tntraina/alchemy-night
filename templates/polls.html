@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,9 +6,9 @@
 </head>
 <body>
     <h1>All Polls</h1>
-    {% if polls %}
+    {% if user_polls %}
         <ul>
-            {% for poll in polls %}
+            {% for poll in user_polls %}
                 <li>
                     <a href="{{ url_for('poll_view', poll_id=poll.id) }}">{{ poll.question }}</a>
                 </li>

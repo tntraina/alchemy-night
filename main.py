@@ -1,22 +1,10 @@
 import os
-<<<<<<< HEAD
 
-from flask import Flask, send_file
-
-app = Flask(__name__)
-
-@app.route("/")
-def index():
-    return send_file('src/index.html')
-
-def main():
-    app.run(port=int(os.environ.get('PORT', 80)))
-=======
 from dotenv import load_dotenv
 
 from flask import Flask, render_template, url_for, redirect, session, request
 from authlib.integrations.flask_client import OAuth
-from database import db, User, Poll, Choice, Vote, LibraryOption, LibraryOptionTag
+from database import db, User, Poll, Choice, Vote, Tag
 
 load_dotenv()
 
@@ -57,13 +45,11 @@ def auth():
     token = google.authorize_access_token()
     user_info = token['userinfo']
     session['user'] = user_info
-    
     user = User.query.filter_by(username=user_info['email']).first()
     if not user:
         user = User(username=user_info['email'])
         db.session.add(user)
         db.session.commit()
-        
     return redirect('/')
 
 @app.route('/logout')
@@ -78,9 +64,11 @@ def polls():
 
     user_info = session['user']
     user = User.query.filter_by(username=user_info['email']).first()
+    print(f"DEBUG: User is {user}")
 
     # Polls created by the user
     user_polls = Poll.query.filter_by(user_id=user.id).all()
+    print(f"DEBUG: Polls are {user_polls}")
 
     # Polls the user can vote in (not created by them and not yet voted in)
     voted_poll_ids = [v.choice.poll_id for v in user.votes]
@@ -137,7 +125,7 @@ def create_poll():
         db.session.commit()
         return redirect(url_for('polls'))
 
-    library_options = LibraryOption.query.all()
+    library_options = Choice.query.all()
     return render_template("create_poll.html", library_options=library_options)
 
 @app.route("/add_library_option", methods=["POST"])
@@ -155,8 +143,7 @@ def add_library_option():
 
 def main():
     # Use 127.0.0.1 and a specific port for local development
-    app.run(host='127.0.0.1', port=8080, debug=True)
->>>>>>> 822b8b5 (Initial commit to overwrite FirebaseStudio repo)
+    app.run(host='0.0.0.0', port=8080, debug=True)
 
 if __name__ == "__main__":
     main()

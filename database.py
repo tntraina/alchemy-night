@@ -15,8 +15,6 @@ class Poll(db.Model):
 class Choice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(100), nullable=False)
-    poll_id = db.Column(db.Integer, db.ForeignKey('poll.id'), nullable=False)
-    poll = db.relationship('Poll', backref=db.backref('choices', lazy=True, cascade="all, delete-orphan"))
 
 class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -25,11 +23,6 @@ class Vote(db.Model):
     user = db.relationship('User', backref=db.backref('votes', lazy=True))
     choice = db.relationship('Choice', backref=db.backref('votes', lazy=True))
 
-class LibraryOption(db.Model):
+class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(100), nullable=False, unique=True)
-
-class LibraryOptionTag(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String(20), nullable=False, unique=True)
-

@@ -1,46 +1,198 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Create Poll</title>
+<title>Create a Poll</title>
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 20px;
+  }
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+  .column {
+    border: 1px solid #ccc;
+    padding: 15px;
+  }
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  li {
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    padding: 8px;
+    cursor: pointer;
+    user-select: none; /* Prevents text selection on double-click */
+  }
+  .add-button {
+    margin-top: 5px;
+    padding: 5px 10px;
+  }
+  .chip-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+  .chip {
+    background-color: #e0e0e0;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .chip.active {
+    background-color: #007bff;
+    color: white;
+  }
+</style>
 </head>
 <body>
-    <h1>Create a New Poll</h1>
-    <form method="POST" action="/create_poll">
-        <label for="question">Poll Question:</label><br>
-        <input type="text" id="question" name="question" required><br><br>
 
-        <h2>Choices</h2>
-        <div id="choices">
-            <input type="text" name="choice" placeholder="Choice 1" required><br>
-        </div>
-        <button type="button" onclick="addChoice()">Add another choice</button><br><br>
+<h1>Create a Poll</h1>
 
-        <h2>Or add from our library</h2>
-        <div id="library_options">
-            {% for option in library_options %}
-                <input type="checkbox" name="library_choice" value="{{ option.text }}"> {{ option.text }}<br>
-            {% endfor %}
-        </div>
-
-        <input type="submit" value="Create Poll">
-    </form>
-
-    <hr>
-
-    <h2>Add to the Library</h2>
-    <form method="POST" action="/add_library_option">
-        <input type="text" name="option_text" required>
-        <input type="submit" value="Add Option">
-    </form>
-
-    <script>
-        let choiceCount = 1;
-        function addChoice() {
-            choiceCount++;
-            const newChoice = document.createElement('div');
-            newChoice.innerHTML = `<input type="text" name="choice" placeholder="Choice ${choiceCount}" required><br>`;
-            document.getElementById('choices').appendChild(newChoice);
+<div class="container" x-data="{ 
+    options: ['Hong Kong Palace', 'Wusong', 'Emmetts', 'Tip Tap Room', 'Black Seed Cafe'], 
+    inputValue: '', 
+    chips: [],
+    tags: {
+        'Hong Kong Palace': ['chinese'], 
+        'Wusong': ['chinese', 'bar'], 
+        'Emmetts': ['irish', 'bar'], 
+        'Black Seed Cafe': ['burgers'], 
+        'Tip Tap Room': ['american', 'bar'],
+    },
+    questions: [],
+    emails: [],
+    newQuestion: '',
+    newEmail: '',
+    
+    addQuestion() {
+        if (this.newQuestion.trim() !== '') {
+            this.questions.push(this.newQuestion.trim());
+            this.newQuestion = '';
         }
-    </script>
+    },
+
+    addEmail() {
+        if (this.newEmail.trim() !== '') {
+            this.emails.push(this.newEmail.trim());
+            this.newEmail = '';
+        }
+    },
+
+    createPoll() {
+        const payload = {
+            title: this.newQuestion,
+            questions: this.questions,
+            emails: this.emails,
+        };
+
+        fetch('/polls/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Poll created successfully:', data);
+            // Optionally, clear the form after successful submission
+            this.newQuestion = '';
+            this.questions = [];
+            this.emails = [];
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+    },
+
+    activeFilters: [],
+    toggleFilter(filter) {
+        if (this.activeFilters.includes(filter)) {
+            this.activeFilters = this.activeFilters.filter(f => f !== filter);
+        } else {
+            this.activeFilters.push(filter);
+        }
+    },
+    filteredOptions() {
+        if (this.activeFilters.length === 0) {
+            return this.options;
+        }
+        return this.options.filter(option => {
+            if (this.tags[option]) {
+                return this.activeFilters.every(filter => this.tags[option].includes(filter));
+            }
+            return false;
+        });
+    },
+    allTags() {
+        const allTagsSet = new Set();
+        Object.values(this.tags).forEach(tags => {
+            tags.forEach(tag => allTagsSet.add(tag));
+        });
+        return Array.from(allTagsSet);
+    }
+}">
+
+  <div class="column">
+    <h2>Description of the Poll</h2>
+    <input type="text" x-model="newQuestion" @keydown.enter="addQuestion" placeholder="Enter your description">
+    <h3>Question List</h3>
+    <ul id="questionList">
+      <template x-for="item in questions" :key="item">
+        <li x-text="item"></li>
+      </template>
+    </ul>
+    <button class="create-poll" @click="createPoll">Create Poll</button>
+  </div>
+
+  <div class="column">
+    <h2>Options</h2>
+    <p>Double-click an option to add it to the poll.</p>
+    <div class="chip-container">
+        <template x-for="tag in allTags()">
+            <span
+                class="chip"
+                tabindex="0"
+                :class="{ 'active': activeFilters.includes(tag) }"
+                @click="toggleFilter(tag)"
+                @keydown.enter="toggleFilter(tag)"
+                x-text="tag"
+            ></span>
+        </template>
+    </div>
+
+    <ul id="optionsList">
+      <template x-for="option in filteredOptions()" :key="option">
+        <li x-text="option" @dblclick="questions.push(option)"></li>
+      </template>
+    </ul>
+  </div>
+
+  <div class="column">
+    <h2>Email List</h2>
+    <input type="email" x-model="newEmail" @keydown.enter="addEmail" placeholder="Enter email address">
+    <button class="add-button" @click="addEmail">Add Email</button>
+    <h3>People who can Vote</h3>
+    <ul id="emailList">
+      <template x-for="email in emails" :key="email">
+        <li x-text="email"></li>
+      </template>
+    </ul>
+  </div>
+
+</div>
+
 </body>
 </html>
