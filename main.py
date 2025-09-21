@@ -1,4 +1,5 @@
 import os
+import json
 
 from dotenv import load_dotenv
 
@@ -71,12 +72,12 @@ def polls():
     print(f"DEBUG: Polls are {user_polls}")
 
     # Polls the user can vote in (not created by them and not yet voted in)
-    voted_poll_ids = [v.choice.poll_id for v in user.votes]
+#   voted_poll_ids = [v.choice.poll_id for v in user.votes]
 
-    votable_polls = Poll.query.filter(
-        Poll.user_id != user.id,
-        ~Poll.id.in_(voted_poll_ids)
-    ).all()
+#    votable_polls = Poll.query.filter(
+#        Poll.user_id != user.id,
+#        ~Poll.id.in_(voted_poll_ids)
+#    ).all()
 
     return render_template("polls.html", user_polls=user_polls, votable_polls=votable_polls)
 
@@ -96,6 +97,7 @@ def poll_view(poll_id):
 
     return render_template('poll_view.html', poll=poll, user_has_voted=user_has_voted)
 
+
 @app.route("/create_poll", methods=["GET", "POST"])
 def create_poll():
     if 'user' not in session:
@@ -105,28 +107,32 @@ def create_poll():
         user_info = session['user']
         user = User.query.filter_by(username=user_info['email']).first()
         question = request.form.get("question")
-        
-        if not question:
-            return "Question is required.", 400
-
-        new_poll = Poll(question=question, user_id=user.id)
-        db.session.add(new_poll)
-
         choices = request.form.getlist("choice")
         library_choices = request.form.getlist("library_choice")
 
-        all_choices = choices + library_choices
+        print(question)
+        print(choices)
 
-        for choice_text in all_choices:
-            if choice_text:
-                new_choice = Choice(text=choice_text, poll=new_poll)
-                db.session.add(new_choice)
-        
-        db.session.commit()
         return redirect(url_for('polls'))
 
-    library_options = Choice.query.all()
-    return render_template("create_poll.html", library_options=library_options)
+    options = [getattr(x, 'text') for x in Choice.query.all()]
+    tags = {}
+    for ch in Choice.query.all():
+        tags[ch.text] = [getattr(x, 'text') for x in ch.tags]
+
+    xdata_lines = []
+
+    xdata_lines.append("options: ['" + "', '".join(options) + "'],")
+    xdata_lines.append("tags : {")
+    for tk, tv in tags.items():
+        xdata_lines.append(f"'{tk}': ['" + "', '".join(tv) + "'],")
+
+    xdata_lines.append("}")
+
+    final_xdata = "\n".join(xdata_lines)
+
+    return render_template("create_poll.html", xdata=final_xdata)
+
 
 @app.route("/add_library_option", methods=["POST"])
 def add_library_option():

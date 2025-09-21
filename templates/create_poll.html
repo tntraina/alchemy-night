@@ -56,16 +56,7 @@
 <h1>Create a Poll</h1>
 
 <div class="container" x-data="{ 
-    options: ['Hong Kong Palace', 'Wusong', 'Emmetts', 'Tip Tap Room', 'Black Seed Cafe'], 
-    inputValue: '', 
-    chips: [],
-    tags: {
-        'Hong Kong Palace': ['chinese'], 
-        'Wusong': ['chinese', 'bar'], 
-        'Emmetts': ['irish', 'bar'], 
-        'Black Seed Cafe': ['burgers'], 
-        'Tip Tap Room': ['american', 'bar'],
-    },
+    {{ xdata|safe }} ,
     questions: [],
     emails: [],
     newQuestion: '',
@@ -92,7 +83,7 @@
             emails: this.emails,
         };
 
-        fetch('/polls/create', {
+        fetch('/create_poll', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,14 +1,6 @@
-<<<<<<< HEAD
-# Dev environment
-pip
-autopep8
-
-# App
-flask
-=======
 Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
 Authlib==1.3.1
 python-dotenv==1.0.1
-
->>>>>>> 822b8b5 (Initial commit to overwrite FirebaseStudio repo)
+dotenv
+requests
