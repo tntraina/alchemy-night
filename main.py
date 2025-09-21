@@ -1,3 +1,4 @@
+
 import os
 import json
 
@@ -36,10 +37,14 @@ google = oauth.register(
 def index():
     return render_template('index.html')
 
+
+
 @app.route('/login')
 def login():
     redirect_uri = url_for('auth', _external=True)
     return google.authorize_redirect(redirect_uri)
+
+
 
 @app.route('/auth')
 def auth():
@@ -53,10 +58,14 @@ def auth():
         db.session.commit()
     return redirect('/')
 
+
+
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect('/')
+
+
 
 @app.route("/polls")
 def polls():
@@ -81,6 +90,8 @@ def polls():
 
     return render_template("polls.html", user_polls=user_polls, votable_polls=votable_polls)
 
+
+
 @app.route('/polls/<int:poll_id>')
 def poll_view(poll_id):
     if 'user' not in session:
@@ -98,6 +109,7 @@ def poll_view(poll_id):
     return render_template('poll_view.html', poll=poll, user_has_voted=user_has_voted)
 
 
+
 @app.route("/create_poll", methods=["GET", "POST"])
 def create_poll():
     if 'user' not in session:
@@ -106,12 +118,27 @@ def create_poll():
     if request.method == "POST":
         user_info = session['user']
         user = User.query.filter_by(username=user_info['email']).first()
-        question = request.form.get("question")
-        choices = request.form.getlist("choice")
-        library_choices = request.form.getlist("library_choice")
+        data = request.get_json()
+        poll_name = data.get("title")
+        options = data.get("questions")
 
-        print(question)
-        print(choices)
+        print(poll_name)
+        print(options)
+        print(user)
+
+        new_poll = Poll(question=poll_name, user_id=user.id)
+
+        db.session.add(new_poll)
+
+        for choice_text in options:
+            if choice_text:
+                choice = Choice.query.filter_by(text=choice_text).first()
+                if not choice:
+                    choice = Choice(text=choice_text)
+                    db.session.add(choice)
+                new_poll.choices.append(choice)
+
+        db.session.commit()
 
         return redirect(url_for('polls'))
 
@@ -134,6 +161,8 @@ def create_poll():
     return render_template("create_poll.html", xdata=final_xdata)
 
 
+
+
 @app.route("/add_library_option", methods=["POST"])
 def add_library_option():
     if 'user' not in session:
@@ -146,6 +175,8 @@ def add_library_option():
         db.session.commit()
 
     return redirect(url_for('create_poll'))
+
+
 
 def main():
     # Use 127.0.0.1 and a specific port for local development

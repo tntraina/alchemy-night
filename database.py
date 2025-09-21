@@ -11,9 +11,15 @@ class Poll(db.Model):
     question = db.Column(db.String(200), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('polls', lazy=True))
+    choices = db.relationship('Choice', secondary=poll_choices, lazy='subquery', backref=db.backref('polls', lazy=True))
 
 choice_tags = db.Table('choice_tags',
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True),
+    db.Column('choice_id', db.Integer, db.ForeignKey('choice.id'), primary_key=True)
+)
+
+poll_choices = db.Table('poll_choices',
+    db.Column('poll_id', db.Integer, db.ForeignKey('poll.id'), primary_key=True),
     db.Column('choice_id', db.Integer, db.ForeignKey('choice.id'), primary_key=True)
 )
 
