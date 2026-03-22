@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header"><h2>Create a New Poll</h2></div>
+<div class="form-container" x-data="pollForm()">
+    <form @submit.prevent="submitForm">
+        <div class="form-group">
+            <label for="title">Poll Title *</label>
+            <input type="text" id="title" x-model="form.title" placeholder="Your question here?" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" x-model="form.description" placeholder="Optional context" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Poll Options * (minimum 2)</label>
+            <div class="options-list">
+                <template x-for="(option, index) in form.options" :key="index">
+                    <div class="option-input-group">
+                        <input type="text" x-model="form.options[index]" :placeholder="'Option ' + (index + 1)" required>
+                        <button type="button" @click="removeOption(index)" class="btn btn-danger btn-sm" x-show="form.options.length > 2">Remove</button>
+                    </div>
+                </template>
+            </div>
+            <button type="button" @click="addOption()" class="btn btn-secondary btn-sm">+ Add Option</button>
+        </div>
+        <div class="form-group">
+            <label>Allowed Voters (emails)</label>
+            <div class="email-list">
+                <template x-for="(email, index) in allowed_emails" :key="index">
+                    <div class="email-input-group">
+                        <input type="email" x-model="allowed_emails[index]" placeholder="user@example.com">
+                        <button type="button" @click="removeEmail(index)" class="btn btn-danger btn-sm">Remove</button>
+                    </div>
+                </template>
+            </div>
+            <button type="button" @click="addEmail()" class="btn btn-secondary btn-sm">+ Add Email</button>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" :disabled="isSubmitting"><span x-show="!isSubmitting">Create Poll</span><span x-show="isSubmitting">Creating...</span></button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+<script>
+function pollForm() {
+    return {
+        form: { title: '', description: '', options: ['', ''] },
+        allowed_emails: [],
+        isSubmitting: false,
+        addOption() { this.form.options.push(''); },
+        removeOption(index) { this.form.options.splice(index, 1); },
+        addEmail() { this.allowed_emails.push(''); },
+        removeEmail(index) { this.allowed_emails.splice(index, 1); },
+        async submitForm() {
+            const options = this.form.options.filter(o => o.trim());
+            const emails = this.allowed_emails.filter(e => e.trim());
+            if (!this.form.title.trim() || options.length < 2) { alert('Valid title and 2+ options required'); return; }
+            this.isSubmitting = true;
+            try {
+                const response = await fetch('{{ url_for("create_poll") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: this.form.title, description: this.form.description, options: options, allowed_emails: emails })
+                });
+                const data = await response.json();
+                if (response.ok) window.location.href = data.redirect;
+                else alert('Error: ' + data.error);
+            } catch (err) { alert('Error: ' + err.message); }
+            finally { this.isSubmitting = false; }
+        }
+    };
+}
+</script>
+{% endblock %}
