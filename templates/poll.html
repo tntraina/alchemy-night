@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>{{ poll.title }}</h2>
+    {% if poll.description %}<p class="poll-description">{{ poll.description }}</p>{% endif %}
+</div>
+<div class="voting-container" x-data="rankingForm()">
+    <div class="voting-instructions"><p><strong>Ranked Choice Voting:</strong> Rank your choices in order of preference.</p></div>
+    <form @submit.prevent="submitVote">
+        <div class="ranking-list">
+            <div class="available-options">
+                <h3>Available Options</h3>
+                <div class="options-pool">
+                    <template x-for="option in availableOptions" :key="option.id">
+                        <div class="option-card draggable" draggable="true" @dragstart="dragStart(option)" @click="addToRanking(option)">
+                            <span x-text="option.text"></span><span class="hint">Click or drag</span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="your-ranking">
+                <h3>Your Ranking</h3>
+                <div class="ranked-options" @dragover.prevent @drop.prevent="dragEnd">
+                    <template x-for="(option, index) in rankedOptions" :key="option.id">
+                        <div class="ranked-option">
+                            <span class="rank-number" x-text="index + 1"></span><span x-text="option.text"></span>
+                            <button type="button" @click="removeFromRanking(index)" class="btn-remove">✕</button>
+                        </div>
+                    </template>
+                    <div x-show="rankedOptions.length === 0" class="empty-ranking">Drag or click to rank</div>
+                </div>
+            </div>
+        </div>
+        <div class="voting-actions">
+            <button type="submit" class="btn btn-primary btn-lg" :disabled="rankedOptions.length === 0 || isSubmitting"><span x-show="!isSubmitting">Submit Vote</span><span x-show="isSubmitting">Submitting...</span></button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
+        </div>
+    </form>
+</div>
+<script>
+function rankingForm() {
+    return {
+        allOptions: {{ poll.options | tojson }},
+        rankedOptions: [],
+        draggedOption: null,
+        isSubmitting: false,
+        get availableOptions() { return this.allOptions.filter(o => !this.rankedOptions.find(r => r.id === o.id)); },
+        addToRanking(option) { if (!this.rankedOptions.find(r => r.id === option.id)) this.rankedOptions.push(option); },
+        removeFromRanking(index) { this.rankedOptions.splice(index, 1); },
+        dragStart(option) { this.draggedOption = option; },
+        dragEnd() { if (this.draggedOption && !this.rankedOptions.find(r => r.id === this.draggedOption.id)) this.rankedOptions.push(this.draggedOption); this.draggedOption = null; },
+        async submitVote() {
+            this.isSubmitting = true;
+            try {
+                const response = await fetch('{{ url_for("submit_vote", poll_id=poll.id) }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ranked_choices: this.rankedOptions.map(o => o.id) })
+                });
+                if (response.ok) window.location.href = '{{ url_for("poll_results", poll_id=poll.id) }}';
+                else { const err = await response.json(); alert('Error: ' + err.error); }
+            } catch (err) { alert('Error: ' + err.message); }
+            finally { this.isSubmitting = false; }
+        }
+    };
+}
+</script>
+{% endblock %}
