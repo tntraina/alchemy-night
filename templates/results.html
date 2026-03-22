@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header"><h2>Poll Results: {{ results.title }}</h2></div>
+<div class="results-container">
+    <div class="winners-summary">
+        <h3>🏆 Winners by Voting Method</h3>
+        <div class="winners-grid">
+            <div class="winner-card irv"><h4>Instant Runoff</h4><p class="winner-name">{{ results.irv_winner_name or 'No winner' }}</p><p class="method-description">Eliminates lowest each round</p></div>
+            <div class="winner-card borda"><h4>Borda Count</h4><p class="winner-name">{{ results.borda_winner_name or 'No winner' }}</p><p class="method-description">Points by rank</p></div>
+            <div class="winner-card condorcet"><h4>Condorcet</h4><p class="winner-name">{{ results.condorcet_winner_name or 'None' }}</p><p class="method-description">Beats all pairwise</p></div>
+            <div class="winner-card schulze"><h4>Schulze</h4><p class="winner-name">{{ results.schulze_winner_names | join(', ') or 'None' }}</p><p class="method-description">Strongest paths</p></div>
+        </div>
+    </div>
+    <div class="results-summary"><div class="summary-stat"><label>Total Votes</label><p class="stat-value">{{ results.total_votes }}</p></div></div>
+    <div class="method-section irv-section">
+        <h3>📊 Instant Runoff - Round by Round</h3>
+        {% for round in results.irv_rounds %}
+        <div class="round-card">
+            <div class="round-header"><h4>Round {{ round.round }}</h4><span>{{ round.total }} votes{% if round.exhausted %}, {{ round.exhausted }} exhausted{% endif %}</span></div>
+            <div class="round-results">
+                {% for cand_id, votes in round.results.items() %}
+                <div class="result-bar-item">
+                    <div class="result-label"><span>{{ results.options[cand_id] }}</span><span>{{ votes }}</span></div>
+                    <div class="result-bar-container"><div class="result-bar" style="width: {% if round.total > 0 %}{{ (votes / round.total * 100) | round(1) }}{% else %}0{% endif %}%"></div></div>
+                    <span class="result-percentage">{% if round.total > 0 %}{{ ((votes / round.total * 100) | round(1)) }}%{% else %}0%{% endif %}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="method-section borda-section">
+        <h3>🎯 Borda Count</h3>
+        <div class="borda-rankings">
+            {% for option_name, score in results.borda_rankings %}
+            <div class="ranking-item">
+                <div class="ranking-name">{{ option_name }}</div>
+                <div class="ranking-bar-container"><div class="ranking-bar" style="width: {% if results.borda_rankings | first | last > 0 %}{{ (score / (results.borda_rankings | first | last) * 100) | round(1) }}{% else %}0{% endif %}%"></div></div>
+                <div class="ranking-score">{{ score }} points</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="method-section condorcet-section">
+        <h3>⚔️ Condorcet - Pairwise Matchups</h3>
+        <div class="pairwise-grid">
+            {% for matchup in results.pairwise_results %}
+            <div class="matchup-card">
+                <div class="matchup-header">{{ results.options[matchup.candidate1] }} vs {{ results.options[matchup.candidate2] }}</div>
+                <div class="matchup-bars">
+                    <div class="matchup-bar">
+                        <div class="matchup-label">{{ results.options[matchup.candidate1] }}</div>
+                        <div class="matchup-bar-container"><div class="matchup-bar-fill" style="width: {% if matchup.c1_wins + matchup.c2_wins > 0 %}{{ (matchup.c1_wins / (matchup.c1_wins + matchup.c2_wins) * 100) | round(0) }}{% else %}50{% endif %}%"></div></div>
+                        <div class="matchup-count">{{ matchup.c1_wins }}</div>
+                    </div>
+                    <div class="matchup-bar">
+                        <div class="matchup-label">{{ results.options[matchup.candidate2] }}</div>
+                        <div class="matchup-bar-container"><div class="matchup-bar-fill" style="width: {% if matchup.c1_wins + matchup.c2_wins > 0 %}{{ (matchup.c2_wins / (matchup.c1_wins + matchup.c2_wins) * 100) | round(0) }}{% else %}50{% endif %}%"></div></div>
+                        <div class="matchup-count">{{ matchup.c2_wins }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="method-section schulze-section">
+        <h3>🛤️ Schulze - Strongest Paths</h3>
+        {% if results.schulze_winner_names %}<div class="schulze-winners"><strong>Winner(s):</strong> {{ results.schulze_winner_names | join(', ') }}</div>{% endif %}
+        <div class="schulze-paths">
+            <table class="paths-table"><thead><tr><th>From</th><th>To</th><th>Strength</th></tr></thead><tbody>
+                {% for path in results.schulze_paths | slice(20) %}
+                <tr><td>{{ path.from }}</td><td>{{ path.to }}</td><td class="strength-value">{{ path.strength }}</td></tr>
+                {% endfor %}
+            </tbody></table>
+        </div>
+    </div>
+    <div class="results-actions">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Polls</a>
+        <a href="{{ url_for('vote_poll', poll_id=results.poll_id) }}" class="btn btn-primary">Vote Again</a>
+    </div>
+</div>
+{% endblock %}

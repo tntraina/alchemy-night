@@ -1,6 +1,9 @@
-<<<<<<< HEAD
-.venv
-=======
-.venv
-instance/project.db
->>>>>>> 822b8b5 (Initial commit to overwrite FirebaseStudio repo)
+__pycache__/
+*.pyc
+.env
+static/db/*.db
+.DS_Store
+*.egg-info/
+dist/
+build/
+startserver.sh
